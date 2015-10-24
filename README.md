@@ -1,9 +1,11 @@
-# Alice 
+# Chain (extended [Alice](https://github.com/justinas/alice))
 
-[![Build Status](https://travis-ci.org/justinas/alice.svg?branch=master)](https://travis-ci.org/justinas/alice)
+[![Build Status](https://travis-ci.org/orian/chain.svg?branch=master)](https://travis-ci.org/orian/chain)
 
-Alice provides a convenient way to chain 
-your HTTP middleware functions and the app handler.
+This document is a refactored version of the original Alice's README. Thanks for [Justinas](https://github.com/justinas) for a great library.
+
+Chain provides a convenient way to chain
+your context aware HTTP middleware functions and the app handler.
 
 In short, it transforms
 
@@ -11,12 +13,11 @@ In short, it transforms
 
 to
 
-    alice.New(Middleware1, Middleware2, Middleware3).Then(App).
+    chain.New(Middleware1, Middleware2, Middleware3).Then(App).
 
 ### Why?
 
-None of the other middleware chaining solutions
-behaves exactly like Alice.
+None of the other middleware chaining solutions behaves exactly like Alice.
 Alice is as minimal as it gets:
 in essence, it's just a for loop that does the wrapping for you.
 
@@ -27,14 +28,22 @@ for explanation how Alice is different from other chaining solutions.
 
 Your middleware constructors should have the form of
 
-    func (http.Handler) http.Handler
+```go
+    // github.com/orian/wctx
+    // Handler has one method: func () ServeHTTP(context.Context, http.ResponseWriter, http.Request)
+
+    func (wctx.Handler) wctx.Handler
+```
 
 Some middleware provide this out of the box.
 For ones that don't, it's trivial to write one yourself.
 
 ```go
-func myStripPrefix(h http.Handler) http.Handler {
-    return http.StripPrefix("/old", h)
+func modifyContext(h wctx.Handler) wctx.Handler {
+    return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+        c := context.WithValue(ctx, "key", "value")
+        h.ServeHTTP(c, w, r)
+    }
 }
 ```
 
